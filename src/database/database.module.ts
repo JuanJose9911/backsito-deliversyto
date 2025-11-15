@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User } from '../users/user.entity';
 import databaseConfig from '../config/database.config';
+
 @Module({
   imports: [
     ConfigModule.forFeature(databaseConfig),
@@ -9,7 +11,7 @@ import databaseConfig from '../config/database.config';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [],
+        entities: [User],
       }),
       inject: [ConfigService],
     }),

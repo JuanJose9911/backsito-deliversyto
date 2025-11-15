@@ -17,11 +17,11 @@ export class User {
   @Column()
   password: string;
 
-  @Column({ nullable: true })
-  firstName?: string;
-
-  @Column({ nullable: true })
-  lastName?: string;
+  @Column()
+  name: string; 
+  
+  @Column()
+  phone: string; 
 
   @Column({ default: true })
   isActive: boolean;

@@ -1,29 +1,43 @@
 # Copilot Instructions for Backend Project
 
 ## Architecture Overview
-This is a NestJS backend application with TypeORM/MySQL integration and modular architecture. The project follows NestJS conventions with separation between modules, controllers, services, and entities.
+This is a NestJS backend application with TypeORM/MySQL integration and JWT authentication. The project follows NestJS conventions with separation between modules, controllers, services, and entities.
 
 **Key Components:**
-- `src/app.module.ts` - Root module importing DatabaseModule and feature modules
+- `src/app.module.ts` - Root module with global JWT authentication guard
 - `src/database/database.module.ts` - Pure TypeORM configuration module
 - `src/users/` - Users feature module with entity, service, and controller
-- Authentication stack: JWT + Passport with bcryptjs for password hashing (planned)
+- `src/auth/` - Complete JWT authentication module with guards and strategies
 - MySQL database with TypeORM ORM
 
 ## Project Structure Patterns
 ```
 src/
-├── app.{module,controller,service}.ts  # Root app components
-├── main.ts                             # Application entry point
+├── app.{module,controller,service}.ts  # Root app components with global JWT guard
+├── main.ts                             # Application entry point with ValidationPipe
 ├── config/
 │   └── database.config.ts             # Database configuration
 ├── database/
 │   └── database.module.ts             # Pure TypeORM configuration
-└── users/                              # Users feature module
-    ├── users.module.ts                # Module definition with TypeORM.forFeature
-    ├── users.controller.ts            # REST endpoints
-    ├── users.service.ts               # Business logic
-    └── user.entity.ts                 # TypeORM entity
+├── users/                              # Users feature module
+│   ├── users.module.ts                # Module definition with TypeORM.forFeature
+│   ├── users.controller.ts            # REST endpoints (protected by JWT)
+│   ├── users.service.ts               # Business logic
+│   ├── user.entity.ts                 # TypeORM entity
+│   └── dto/                           # Data Transfer Objects with validation
+│       ├── index.ts                   # Export all DTOs
+│       ├── create-user.dto.ts         # DTO for creating users
+│       └── update-user.dto.ts         # DTO for updating users
+└── auth/                               # Authentication module
+    ├── auth.module.ts                 # JWT + Passport configuration
+    ├── auth.{service,controller}.ts   # Auth logic and endpoints
+    ├── strategies/                    # Passport strategies (JWT, Local)
+    ├── guards/                        # Authentication guards
+    ├── decorators/                    # @Public decorator for open endpoints
+    └── dto/                           # DTOs for authentication
+        ├── index.ts                   # Export all auth DTOs
+        ├── login.dto.ts               # DTO for login
+        └── register.dto.ts            # DTO for registration
 ```
 
 ## Development Commands
@@ -61,21 +75,25 @@ The project includes a complete MySQL database setup:
 - **Dependency injection**: Constructor-based injection throughout
 
 ## Authentication Architecture
-Based on package.json dependencies:
-- **JWT Strategy**: `@nestjs/jwt` + `passport-jwt` (ready for implementation)
-- **Local Strategy**: `passport-local` for login (ready for implementation)
-- **Password hashing**: `bcryptjs` (ready for implementation)
-- **User management**: Dedicated users module with CRUD operations
+Complete JWT authentication system:
+- **JWT Strategy**: `@nestjs/jwt` + `passport-jwt` for token validation
+- **Local Strategy**: `passport-local` for email/password login
+- **Password hashing**: `bcryptjs` with salt rounds
+- **Global JWT Guard**: Protects all routes by default
+- **@Public decorator**: Marks specific routes as publicly accessible
+- **Authentication endpoints**: `/auth/login`, `/auth/register`, `/auth/profile`
 
 ## Environment Variables
-Required environment variables for database connection:
+Required environment variables for database connection and JWT:
 ```bash
 DB_HOST=localhost           # Database host
 DB_PORT=3306               # Database port  
 DB_USERNAME=root           # Database username
-DB_PASSWORD=password       # Database password
-DB_DATABASE=auth_db        # Database name
+DB_PASSWORD=               # Database password (empty for no password)
+DB_DATABASE=DOMIS          # Database name
 NODE_ENV=development       # Controls synchronize/logging
+JWT_SECRET=your_secret     # JWT signing secret (change in production)
+JWT_EXPIRES_IN=24h         # JWT token expiration time
 ```
 
 ## Database Integration
@@ -88,6 +106,14 @@ NODE_ENV=development       # Controls synchronize/logging
 - **Unit tests**: Jest with `.spec.ts` files alongside source
 - **E2E tests**: Supertest with full application bootstrap in `test/` directory
 - **Module testing**: Use `Test.createTestingModule()` for isolated testing
+
+## DTO Patterns & Validation
+The project uses a structured approach for Data Transfer Objects:
+- **DTOs location**: Each module has its own `dto/` folder with all related DTOs
+- **Validation**: Uses `class-validator` decorators for automatic validation
+- **Index files**: `dto/index.ts` exports all DTOs for clean imports
+- **Naming convention**: `create-*.dto.ts`, `update-*.dto.ts`, `login.dto.ts`, etc.
+- **Global validation**: ValidationPipe configured in main.ts with whitelist and transform options
 
 ## When Adding Features
 1. Create module first (`nest g module feature`)
