@@ -64,7 +64,7 @@ export class AuthService {
     return bcrypt.compare(plainTextPassword, hashedPassword);
   }
 
-  async validateUserById(userId: number): Promise<User | null> {
+  async validateUserById(userId: string): Promise<User | null> {
     return this.usersService.findOne(userId);
   }
 }

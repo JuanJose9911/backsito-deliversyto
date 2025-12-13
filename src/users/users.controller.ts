@@ -29,7 +29,7 @@ export class UsersController {
 
   @Get(':id')
   async findOne(@Param('id') id: string) {
-    const user = await this.usersService.findOne(+id);
+    const user = await this.usersService.findOne(id);
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
@@ -38,7 +38,7 @@ export class UsersController {
 
   @Patch(':id')
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    const user = await this.usersService.update(+id, updateUserDto);
+    const user = await this.usersService.update(id, updateUserDto);
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
@@ -47,11 +47,11 @@ export class UsersController {
 
   @Delete(':id')
   async remove(@Param('id') id: string) {
-    const user = await this.usersService.findOne(+id);
+    const user = await this.usersService.findOne(id);
     if (!user) {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
     }
-    await this.usersService.remove(+id);
+    await this.usersService.remove(id);
     return { message: `Usuario con ID ${id} eliminado correctamente` };
   }
 }

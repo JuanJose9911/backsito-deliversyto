@@ -8,7 +8,7 @@ export default registerAs('database', () => {
     username: process.env.DB_USERNAME || 'root',
     database: process.env.DB_DATABASE || 'DOMIS',
     entities: ['dist/**/*.entity{.ts,.js}'],
-    synchronize: false, // Deshabilitado para evitar recreación de tablas
+    synchronize: false, // Habilitado temporalmente para crear tabla addresses
     dropSchema: false, // No eliminar el schema existente
     logging: process.env.NODE_ENV === 'development',
     migrations: ['dist/migrations/*{.ts,.js}'],
