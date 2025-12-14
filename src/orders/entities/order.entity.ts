@@ -17,13 +17,10 @@ export class Order {
   id: string;
 
   // Relación con el usuario que hace el pedido
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'user_id' })
+  @Index('idx_order_user')
   user: User;
-
-  @Column({ name: 'user_id' })
-  @Index('idx_user_orders')
-  userId: number;
 
   // Referencias opcionales a direcciones guardadas
   @ManyToOne(() => Address, { nullable: true })
@@ -51,7 +48,7 @@ export class Order {
   originFormattedAddress: string;
 
   @Column('text', { nullable: true })
-  originInstructions: string;
+  originInstructions?: string;
 
   // DIRECCIÓN DE DESTINO (snapshot desnormalizado)
   @Column('decimal', { precision: 10, scale: 8 })
@@ -64,7 +61,7 @@ export class Order {
   destinationFormattedAddress: string;
 
   @Column('text', { nullable: true })
-  destinationInstructions: string;
+  destinationInstructions?: string;
 
   // DESCRIPCIÓN DEL PEDIDO
   @Column('text', { nullable: true })
