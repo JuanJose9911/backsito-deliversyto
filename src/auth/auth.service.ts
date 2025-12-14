@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
+import { DriversService } from '../drivers/drivers.service';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 
@@ -8,6 +9,7 @@ import { User } from '../users/user.entity';
 export class AuthService {
   constructor(
     private usersService: UsersService,
+    private driversService: DriversService,
     private jwtService: JwtService,
   ) {}
 
@@ -66,5 +68,38 @@ export class AuthService {
 
   async validateUserById(userId: string): Promise<User | null> {
     return this.usersService.findOne(userId);
+  }
+
+  async validateDriver(email: string, password: string): Promise<any> {
+    const driver = await this.driversService.findByEmail(email);
+    if (driver && await this.comparePasswords(password, driver.password)) {
+      const { password: _, ...result } = driver;
+      return result;
+    }
+    return null;
+  }
+
+  async loginDriver(driver: any) {
+    const payload = { email: driver.email, sub: driver.id, type: 'driver' };
+    return {
+      access_token: this.jwtService.sign(payload),
+      driver: {
+        id: driver.id,
+        email: driver.email,
+        name: driver.name,
+        phone: driver.phone,
+        status: driver.status,
+        verificationStatus: driver.verificationStatus
+      },
+    };
+  }
+
+  async validateDriverById(driverId: string): Promise<any> {
+    console.log('validateDriverById', driverId);
+    const driver = await this.driversService.findOne(driverId);
+    if (!driver) {
+      return null;
+    }
+    return driver;
   }
 }

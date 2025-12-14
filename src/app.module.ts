@@ -8,6 +8,8 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AddressesModule } from './addresses/addresses.module';
+import { OrdersModule } from './orders/orders.module';
+import { DriversModule } from './drivers/drivers.module';
 
 @Module({
   imports: [
@@ -19,6 +21,8 @@ import { AddressesModule } from './addresses/addresses.module';
     UsersModule,
     AuthModule,
     AddressesModule,
+    OrdersModule,
+    DriversModule,
   ],
   controllers: [AppController],
   providers: [

@@ -5,6 +5,7 @@ import {
   Request,
   Body,
   Get,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
@@ -33,5 +34,18 @@ export class AuthController {
   @Get('profile')
   getProfile(@Request() req: any) {
     return req.user;
+  }
+
+  @Public()
+  @Post('driver/login')
+  async loginDriver(@Body() loginDto: LoginDto) {
+    const driver = await this.authService.validateDriver(
+      loginDto.email,
+      loginDto.password,
+    );
+    if (!driver) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+    return this.authService.loginDriver(driver);
   }
 }
