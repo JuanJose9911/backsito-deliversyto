@@ -9,8 +9,10 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { VerificationCode } from './entities/verification-code.entity';
 
 @Module({
@@ -30,8 +32,8 @@ import { VerificationCode } from './entities/verification-code.entity';
       inject: [ConfigService],
     }),
   ],
-  providers: [AuthService, JwtStrategy, LocalStrategy, JwtAuthGuard, LocalAuthGuard],
+  providers: [AuthService, JwtStrategy, LocalStrategy, GoogleStrategy, JwtAuthGuard, LocalAuthGuard, GoogleAuthGuard],
   controllers: [AuthController],
-  exports: [AuthService, JwtAuthGuard, LocalAuthGuard],
+  exports: [AuthService, JwtAuthGuard, LocalAuthGuard, GoogleAuthGuard],
 })
 export class AuthModule {}

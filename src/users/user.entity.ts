@@ -16,14 +16,23 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column()
-  password: string;
+  @Column({ nullable: true })
+  password?: string;
+
+  @Column({ unique: true, nullable: true })
+  googleId?: string;
 
   @Column()
   name: string; 
   
-  @Column()
-  phone: string; 
+  @Column({ nullable: true })
+  phone?: string;
+
+  @Column({ nullable: true })
+  profilePictureUrl?: string;
+
+  @Column({ default: false })
+  isProfileComplete: boolean; 
 
   @Column({ default: true })
   isActive: boolean;

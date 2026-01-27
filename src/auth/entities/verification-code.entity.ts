@@ -18,7 +18,7 @@ export class VerificationCode {
 
   @Column({
     type: 'enum',
-    enum: ['registration', 'password_reset', 'login_2fa'],
+    enum: ['registration', 'password_reset', 'login_2fa', 'phone_verification'],
     default: 'registration'
   })
   type: string;

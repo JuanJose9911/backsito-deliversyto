@@ -20,7 +20,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.usersService.findByEmail(email);
-    if (user && await this.comparePasswords(password, user.password)) {
+    if (user && user.password && await this.comparePasswords(password, user.password)) {
       const { password: _, ...result } = user;
       return result;
     }
@@ -94,7 +94,7 @@ export class AuthService {
   }
 
   /**
-   * Verificar código y activar usuario
+   * Verificar código (funciona para registro y teléfono)
    */
   async verifyCode(userId: string, code: string): Promise<any> {
     // Buscar usuario
@@ -103,18 +103,12 @@ export class AuthService {
       throw new BadRequestException('Usuario no encontrado');
     }
 
-    // Verificar si ya está verificado
-    if (user.isVerified) {
-      throw new BadRequestException('El usuario ya está verificado');
-    }
-
-    // Buscar código válido
+    // Buscar código válido (cualquier tipo)
     const verificationCode = await this.verificationCodeRepository.findOne({
       where: {
         userId,
         code,
         isUsed: false,
-        type: 'registration',
       },
     });
 
@@ -132,16 +126,46 @@ export class AuthService {
     verificationCode.usedAt = new Date();
     await this.verificationCodeRepository.save(verificationCode);
 
-    // Actualizar usuario como verificado
-    await this.usersService.markAsVerified(user.id);
+    // Aplicar lógica según el tipo de verificación
+    if (verificationCode.type === 'registration') {
+      // Verificar si ya está verificado
+      if (user.isVerified) {
+        throw new BadRequestException('El usuario ya está verificado');
+      }
 
-    // Actualizar objeto user en memoria para el login
-    user.isVerified = true;
-    user.verifiedAt = new Date();
+      // Actualizar usuario como verificado
+      await this.usersService.markAsVerified(user.id);
 
-    // Iniciar sesión y devolver token
-    const { password: _, ...userWithoutPassword } = user;
-    return this.login(userWithoutPassword);
+      // Actualizar objeto user en memoria para el login
+      user.isVerified = true;
+      user.verifiedAt = new Date();
+
+      // Iniciar sesión y devolver token
+      const { password: _, ...userWithoutPassword } = user;
+      return this.login(userWithoutPassword);
+    } 
+    
+    if (verificationCode.type === 'phone_verification') {
+      // Verificar si ya está completo
+      if (user.isProfileComplete) {
+        throw new BadRequestException('El perfil ya está completo');
+      }
+
+      // Marcar perfil como completo
+      await this.usersService.update(userId, {
+        isProfileComplete: true,
+      });
+
+      return {
+        message: 'Teléfono verificado correctamente. Perfil completo.',
+        isProfileComplete: true,
+      };
+    }
+
+    // Otros tipos de verificación en el futuro...
+    return {
+      message: 'Código verificado correctamente',
+    };
   }
 
   private async hashPassword(password: string): Promise<string> {
@@ -188,5 +212,116 @@ export class AuthService {
       return null;
     }
     return driver;
+  }
+
+  /**
+   * Validar o crear usuario desde Google OAuth
+   */
+  async validateGoogleUser(googleUser: {
+    googleId: string;
+    email: string;
+    name: string;
+    profilePictureUrl?: string;
+  }): Promise<User> {
+    // Buscar usuario por googleId o email
+    let user = await this.usersService.findByGoogleId(googleUser.googleId);
+    
+    if (!user) {
+      user = await this.usersService.findByEmail(googleUser.email);
+    }
+
+    // Si el usuario existe, actualizar googleId si no lo tiene
+    if (user) {
+      if (!user.googleId) {
+        user.googleId = googleUser.googleId;
+        user.profilePictureUrl = googleUser.profilePictureUrl;
+        await this.usersService.update(user.id, {
+          googleId: user.googleId,
+          profilePictureUrl: user.profilePictureUrl,
+        });
+      }
+      return user;
+    }
+
+    // Crear nuevo usuario con Google OAuth
+    const newUser = await this.usersService.create({
+      email: googleUser.email,
+      name: googleUser.name,
+      googleId: googleUser.googleId,
+      profilePictureUrl: googleUser.profilePictureUrl,
+      isVerified: true, // Los usuarios de Google ya están verificados
+      verifiedAt: new Date(),
+      isProfileComplete: false, // Necesita completar teléfono
+    });
+
+    return newUser;
+  }
+
+  /**
+   * Login con Google OAuth
+   */
+  async googleLogin(user: User) {
+    const payload = { email: user.email, sub: user.id };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        phone: user.phone,
+        profilePictureUrl: user.profilePictureUrl,
+        isProfileComplete: user.isProfileComplete,
+      },
+    };
+  }
+
+  /**
+   * Completar perfil con teléfono (usuarios de Google OAuth)
+   */
+  async completeProfile(userId: string, phone: string): Promise<any> {
+    // Buscar usuario
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    // Verificar que sea usuario de Google (tiene googleId)
+    if (!user.googleId) {
+      throw new BadRequestException('Esta operación solo está disponible para usuarios de Google');
+    }
+
+    // Verificar si ya tiene teléfono
+    if (user.phone) {
+      throw new BadRequestException('El usuario ya tiene un teléfono registrado');
+    }
+
+    // Actualizar teléfono
+    await this.usersService.update(userId, { phone });
+
+    // Generar código de verificación para el teléfono
+    const code = this.generateVerificationCode();
+    
+    // Calcular expiración (10 minutos)
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+    // Guardar código en base de datos
+    const verificationCode = this.verificationCodeRepository.create({
+      code,
+      userId: user.id,
+      type: 'phone_verification',
+      expiresAt,
+      isUsed: false,
+    });
+
+    await this.verificationCodeRepository.save(verificationCode);
+
+    // TODO: Enviar SMS con Twilio
+    console.log(`📱 Código de verificación de teléfono para ${phone}: ${code}`);
+
+    return {
+      message: 'Código de verificación enviado al teléfono',
+      phone,
+    };
   }
 }

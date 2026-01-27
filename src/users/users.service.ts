@@ -37,9 +37,14 @@ export class UsersService {
     return this.usersRepository.findOne({ where: { email } });
   }
 
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { googleId } });
+  }
+
   async markAsVerified(userId: string): Promise<void> {
     await this.usersRepository.update(userId, {
       isVerified: true,
+      isProfileComplete: true,
       verifiedAt: new Date(),
     });
   }
