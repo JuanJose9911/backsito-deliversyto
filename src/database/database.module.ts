@@ -7,6 +7,7 @@ import { Order } from '../orders/entities/order.entity';
 import { Driver } from '../drivers/entities/driver.entity';
 import { Vehicle } from '../drivers/entities/vehicle.entity';
 import { DriverDocument } from '../drivers/entities/driver-document.entity';
+import { VerificationCode } from '../auth/entities/verification-code.entity';
 import databaseConfig from '../config/database.config';
 
 @Module({
@@ -16,7 +17,7 @@ import databaseConfig from '../config/database.config';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Address, Order, Driver, Vehicle, DriverDocument],
+        entities: [User, Address, Order, Driver, Vehicle, DriverDocument, VerificationCode],
       }),
       inject: [ConfigService],
     }),

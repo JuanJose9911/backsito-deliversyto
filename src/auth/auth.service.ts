@@ -1,9 +1,12 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { DriversService } from '../drivers/drivers.service';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
+import { VerificationCode } from './entities/verification-code.entity';
 
 @Injectable()
 export class AuthService {
@@ -11,6 +14,8 @@ export class AuthService {
     private usersService: UsersService,
     private driversService: DriversService,
     private jwtService: JwtService,
+    @InjectRepository(VerificationCode)
+    private verificationCodeRepository: Repository<VerificationCode>,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -45,16 +50,98 @@ export class AuthService {
 
       const hashedPassword = await this.hashPassword(registerDto.password);
       
+      // Crear usuario sin verificar (isVerified: false por defecto)
       const user = await this.usersService.create({
         ...registerDto,
         password: hashedPassword,
       });
+
+      // Generar código de verificación de 6 dígitos
+      const code = this.generateVerificationCode();
       
-      const { password: _, ...userWithoutPassword } = user;
-      return this.login(userWithoutPassword);
+      // Calcular expiración (10 minutos)
+      const expiresAt = new Date();
+      expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+
+      // Guardar código en base de datos
+      const verificationCode = this.verificationCodeRepository.create({
+        code,
+        userId: user.id,
+        type: 'registration',
+        expiresAt,
+        isUsed: false,
+      });
+
+      await this.verificationCodeRepository.save(verificationCode);
+
+      console.log(`📱 Código de verificación para ${user.email}: ${code}`);
+
+      return {
+        message: 'Usuario registrado. Verifica tu código para activar tu cuenta.',
+        userId: user.id,
+        email: user.email
+      };
     } catch (error) {
       throw error;
     }
+  }
+
+  /**
+   * Genera un código de verificación de 6 dígitos
+   */
+  private generateVerificationCode(): string {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  }
+
+  /**
+   * Verificar código y activar usuario
+   */
+  async verifyCode(userId: string, code: string): Promise<any> {
+    // Buscar usuario
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new BadRequestException('Usuario no encontrado');
+    }
+
+    // Verificar si ya está verificado
+    if (user.isVerified) {
+      throw new BadRequestException('El usuario ya está verificado');
+    }
+
+    // Buscar código válido
+    const verificationCode = await this.verificationCodeRepository.findOne({
+      where: {
+        userId,
+        code,
+        isUsed: false,
+        type: 'registration',
+      },
+    });
+
+    if (!verificationCode) {
+      throw new BadRequestException('Código de verificación inválido');
+    }
+
+    // Verificar si el código expiró
+    if (new Date() > verificationCode.expiresAt) {
+      throw new BadRequestException('El código de verificación ha expirado');
+    }
+
+    // Marcar código como usado
+    verificationCode.isUsed = true;
+    verificationCode.usedAt = new Date();
+    await this.verificationCodeRepository.save(verificationCode);
+
+    // Actualizar usuario como verificado
+    await this.usersService.markAsVerified(user.id);
+
+    // Actualizar objeto user en memoria para el login
+    user.isVerified = true;
+    user.verifiedAt = new Date();
+
+    // Iniciar sesión y devolver token
+    const { password: _, ...userWithoutPassword } = user;
+    return this.login(userWithoutPassword);
   }
 
   private async hashPassword(password: string): Promise<string> {

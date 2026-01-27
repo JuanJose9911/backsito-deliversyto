@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { DriversModule } from '../drivers/drivers.module';
 import { AuthService } from './auth.service';
@@ -10,9 +11,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { LocalAuthGuard } from './guards/local-auth.guard';
+import { VerificationCode } from './entities/verification-code.entity';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([VerificationCode]),
     PassportModule,
     UsersModule,
     DriversModule,

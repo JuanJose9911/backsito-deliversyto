@@ -28,6 +28,12 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  verifiedAt?: Date;
+
   @OneToMany(() => Address, (address) => address.user)
   addresses: Address[];
 

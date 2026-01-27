@@ -10,7 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { LoginDto, RegisterDto } from './dto';
+import { LoginDto, RegisterDto, VerifyCodeDto } from './dto';
 import { Public } from './decorators/public.decorator';
 
 @Controller('auth')
@@ -28,6 +28,12 @@ export class AuthController {
   @Post('register')
   async register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Public()
+  @Post('verify')
+  async verifyCode(@Body() verifyDto: VerifyCodeDto) {
+    return this.authService.verifyCode(verifyDto.userId, verifyDto.code);
   }
 
   @UseGuards(JwtAuthGuard)
