@@ -1,0 +1,690 @@
+{
+	"info": {
+		"_postman_id": "deliversyto-collection-v1",
+		"name": "DeliverSyto API - Flujo Completo",
+		"description": "Colección completa para probar el flujo de la app desde registro hasta asignación de driver",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "userToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "driverToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "userId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "driverId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "originAddressId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "destinationAddressId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "orderId",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. REGISTRO Y AUTENTICACIÓN",
+			"item": [
+				{
+					"name": "1.1 Registro de Usuario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('userId', response.userId);",
+									"    console.log('✅ Usuario registrado:', response.email);",
+									"    console.log('⚠️  Verifica el código SMS antes de hacer login');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test.user@deliversyto.com\",\n  \"password\": \"123456\",\n  \"name\": \"Juan Test\",\n  \"phone\": \"+573001234567\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "register"]
+						},
+						"description": "Registra un nuevo usuario. Se enviará un código de verificación por SMS."
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Verificar Código de Usuario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200 || pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    if (response.access_token) {",
+									"        pm.collectionVariables.set('userToken', response.access_token);",
+									"        console.log('✅ Email verificado y login automático exitoso');",
+									"    } else {",
+									"        console.log('✅ Código verificado. Ahora puedes hacer login');",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{userId}}\",\n  \"code\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/verify",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "verify"]
+						},
+						"description": "Verifica el código de 6 dígitos enviado por SMS. Obtén el código de la tabla verification_codes o del SMS. Este endpoint hace login automáticamente después de verificar."
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Login de Usuario",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('userToken', response.access_token);",
+									"    console.log('✅ Login exitoso - Token guardado');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"test.user@deliversyto.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						},
+						"description": "Login de usuario. REQUIERE email verificado con código SMS. Si intentas hacer login sin verificar, recibirás error 401."
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 Registro de Driver",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('driverId', response.id);",
+									"    console.log('✅ Driver creado:', response.email);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Pedro Conductor Test\",\n  \"email\": \"driver.test@deliversyto.com\",\n  \"password\": \"123456\",\n  \"phone\": \"+573101234567\",\n  \"photo\": \"https://example.com/photo.jpg\",\n  \"birthDate\": \"1990-05-15\",\n  \"documentType\": \"CC\",\n  \"documentNumber\": \"1234567890\",\n  \"emergencyContactName\": \"Maria Conductor\",\n  \"emergencyContactPhone\": \"+573109876543\",\n  \"emergencyContactRelationship\": \"Esposa\",\n  \"vehicle\": {\n    \"type\": \"motorcycle\",\n    \"plate\": \"ABC123\",\n    \"brand\": \"Honda\",\n    \"model\": \"CBR 150\",\n    \"year\": 2020,\n    \"color\": \"Roja\",\n    \"registrationPhoto\": \"https://example.com/registration.jpg\",\n    \"soatPhoto\": \"https://example.com/soat.jpg\",\n    \"soatExpiryDate\": \"2026-12-31\",\n    \"technicalReviewPhoto\": \"https://example.com/technical.jpg\",\n    \"technicalReviewExpiryDate\": \"2026-12-31\"\n  },\n  \"documents\": [\n    {\n      \"type\": \"license\",\n      \"documentNumber\": \"L123456789\",\n      \"photoUrl\": \"https://example.com/license.jpg\",\n      \"issueDate\": \"2020-01-01\",\n      \"expiryDate\": \"2030-01-01\"\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drivers/register",
+							"host": ["{{baseUrl}}"],
+							"path": ["drivers", "register"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 Login de Driver",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('driverToken', response.access_token);",
+									"    console.log('✅ Driver login exitoso - Token guardado');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"driver.test@deliversyto.com\",\n  \"password\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/driver/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "driver", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. DIRECCIONES",
+			"item": [
+				{
+					"name": "2.1 Crear Dirección Origen",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('originAddressId', response.id);",
+									"    console.log('✅ Dirección origen creada');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"latitude\": 4.6869,\n  \"longitude\": -74.0543,\n  \"formattedAddress\": \"Calle 100 #15-20, Bogotá\",\n  \"city\": \"Bogotá\",\n  \"state\": \"Cundinamarca\",\n  \"country\": \"Colombia\",\n  \"placeId\": \"ChIJ0T2NLikpFY4Rxb9iKgznGNA_test_origin\",\n  \"label\": \"home\",\n  \"alias\": \"Casa\",\n  \"instructions\": \"Torre A, Apartamento 501\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/addresses",
+							"host": ["{{baseUrl}}"],
+							"path": ["addresses"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Crear Dirección Destino",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('destinationAddressId', response.id);",
+									"    console.log('✅ Dirección destino creada');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"latitude\": 4.6097,\n  \"longitude\": -74.0817,\n  \"formattedAddress\": \"Carrera 7 #32-16, Bogotá\",\n  \"city\": \"Bogotá\",\n  \"state\": \"Cundinamarca\",\n  \"country\": \"Colombia\",\n  \"placeId\": \"ChIJabcdef123456789xyz1234_test_destination\",\n  \"label\": \"work\",\n  \"alias\": \"Oficina\",\n  \"instructions\": \"Piso 3, Recepción\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/addresses",
+							"host": ["{{baseUrl}}"],
+							"path": ["addresses"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. DRIVER PREPARACIÓN",
+			"item": [
+				{
+					"name": "3.1 Driver - Actualizar Ubicación",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"latitude\": 4.6795,\n  \"longitude\": -74.0489\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drivers/location",
+							"host": ["{{baseUrl}}"],
+							"path": ["drivers", "location"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Driver - Cambiar a Online",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"status\": \"online\",\n  \"isAvailable\": true\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/drivers/{{driverId}}/status",
+							"host": ["{{baseUrl}}"],
+							"path": ["drivers", "{{driverId}}", "status"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. CREAR Y ASIGNAR PEDIDO",
+			"item": [
+				{
+					"name": "4.1 Usuario - Crear Pedido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('orderId', response.id);",
+									"    console.log('✅ Pedido creado:', response.id);",
+									"    console.log('📦 Total:', response.total);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"originLatitude\": 4.6869,\n  \"originLongitude\": -74.0543,\n  \"originAddress\": \"Calle 100 #15-20, Bogotá\",\n  \"originDetails\": \"Torre A, Apartamento 501\",\n  \"destinationLatitude\": 4.6097,\n  \"destinationLongitude\": -74.0817,\n  \"destinationAddress\": \"Carrera 7 #32-16, Bogotá\",\n  \"destinationDetails\": \"Piso 3, Recepción\",\n  \"vehicleType\": \"motorcycle\",\n  \"notes\": \"Documentos importantes\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Usuario - Asignar Drivers al Pedido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    console.log('🔍 Drivers notificados:', response.notifiedDrivers);",
+									"    console.log('📲 Drivers:', JSON.stringify(response.drivers, null, 2));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/assign",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "assign"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Driver - Ver Pedido",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Driver - Aceptar Pedido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    console.log('✅ Pedido aceptado');",
+									"    console.log('📲 Usuario recibirá notificación push');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/accept",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "accept"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. CICLO DE VIDA DEL PEDIDO",
+			"item": [
+				{
+					"name": "5.1 Driver - Iniciar Recogida",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/start-pickup",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "start-pickup"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 Driver - Confirmar Recogida",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    console.log('📦 Pedido recogido');",
+									"    console.log('📲 Usuario recibirá notificación push');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/confirm-pickup",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "confirm-pickup"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Driver - Iniciar Entrega",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/start-delivery",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "start-delivery"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Driver - Completar Entrega",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    console.log('🎉 Pedido completado');",
+									"    console.log('📲 Usuario recibirá notificación push');",
+									"    console.log('💰 Driver liberado y ganancia actualizada');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders/{{orderId}}/complete",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders", "{{orderId}}", "complete"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. CONSULTAS",
+			"item": [
+				{
+					"name": "6.1 Usuario - Ver Mis Pedidos",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/orders",
+							"host": ["{{baseUrl}}"],
+							"path": ["orders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.2 Driver - Ver Perfil",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{driverToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/drivers/me",
+							"host": ["{{baseUrl}}"],
+							"path": ["drivers", "me"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.3 Ver Drivers Disponibles",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{userToken}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/drivers/available",
+							"host": ["{{baseUrl}}"],
+							"path": ["drivers", "available"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

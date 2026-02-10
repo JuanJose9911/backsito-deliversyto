@@ -3,7 +3,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { User } from '../users/user.entity';
 import { Address } from '../addresses/address.entity';
-import { Order } from '../orders/entities/order.entity';
+import { 
+  Order, 
+  OrderRating, 
+  OrderDriverRejection, 
+  OrderStatusHistory, 
+  Payment 
+} from '../orders/entities';
 import { Driver } from '../drivers/entities/driver.entity';
 import { Vehicle } from '../drivers/entities/vehicle.entity';
 import { DriverDocument } from '../drivers/entities/driver-document.entity';
@@ -17,7 +23,19 @@ import databaseConfig from '../config/database.config';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         ...configService.get('database'),
-        entities: [User, Address, Order, Driver, Vehicle, DriverDocument, VerificationCode],
+        entities: [
+          User, 
+          Address, 
+          Order, 
+          OrderRating, 
+          OrderDriverRejection, 
+          OrderStatusHistory, 
+          Payment,
+          Driver, 
+          Vehicle, 
+          DriverDocument, 
+          VerificationCode
+        ],
       }),
       inject: [ConfigService],
     }),

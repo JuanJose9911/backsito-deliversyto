@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { DriversModule } from '../drivers/drivers.module';
+import { SmsModule } from '../sms/sms.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -21,6 +22,7 @@ import { VerificationCode } from './entities/verification-code.entity';
     PassportModule,
     UsersModule,
     DriversModule,
+    SmsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({

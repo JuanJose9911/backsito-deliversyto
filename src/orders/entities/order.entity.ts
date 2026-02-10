@@ -110,19 +110,14 @@ export class Order {
   @Column('decimal', { precision: 10, scale: 2 })
   total: number; // Total a pagar
 
-  // MÉTODO DE PAGO
+  // NOTA: Datos de pago ahora están en la entidad Payment
+  // Mantener método de pago aquí por conveniencia en queries
   @Column({
     type: 'enum',
-    enum: ['cash', 'card'],
+    enum: ['cash', 'card', 'wallet'],
     default: 'cash',
   })
   paymentMethod: string;
-
-  @Column({ default: false })
-  isPaid: boolean;
-
-  @Column({ nullable: true })
-  paymentId: string; // ID de transacción si es con tarjeta
 
   // ESTADO DEL PEDIDO
   @Column({
@@ -148,6 +143,16 @@ export class Order {
   @Column({ name: 'driver_id', nullable: true })
   driverId: string;
 
+  // ASIGNACIÓN DE DRIVER
+  @Column({ type: 'timestamp', nullable: true })
+  assignedAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  acceptDeadline: Date; // Tiempo límite para que el driver acepte (30 segundos)
+
+  // NOTA: rejectionCount y rejectedByDrivers ahora están en OrderDriverRejection
+  // NOTA: timestamps del ciclo de vida ahora están en OrderStatusHistory
+
   // CÓDIGO DE VERIFICACIÓN PARA ENTREGA
   @Column({ nullable: true, length: 6 })
   verificationCode: string;
@@ -155,15 +160,7 @@ export class Order {
   @Column({ default: false })
   isVerified: boolean;
 
-  // CALIFICACIÓN
-  @Column({ type: 'int', nullable: true })
-  rating: number; // 1-5
-
-  @Column('text', { nullable: true })
-  review: string;
-
-  @Column({ type: 'timestamp', nullable: true })
-  reviewedAt: Date;
+  // NOTA: Calificaciones ahora están en OrderRating (usuario y driver se califican mutuamente)
 
   // CANCELACIÓN
   @Column({ nullable: true, length: 100 })

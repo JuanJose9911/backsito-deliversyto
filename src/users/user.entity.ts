@@ -43,6 +43,9 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   verifiedAt?: Date;
 
+  @Column('text', { nullable: true })
+  fcmToken?: string; // Token de Firebase Cloud Messaging para notificaciones push
+
   @OneToMany(() => Address, (address) => address.user)
   addresses: Address[];
 

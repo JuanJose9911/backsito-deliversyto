@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UsersService } from '../users/users.service';
 import { DriversService } from '../drivers/drivers.service';
+import { SmsService } from '../sms/sms.service';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 import { VerificationCode } from './entities/verification-code.entity';
@@ -14,6 +15,7 @@ export class AuthService {
     private usersService: UsersService,
     private driversService: DriversService,
     private jwtService: JwtService,
+    private smsService: SmsService,
     @InjectRepository(VerificationCode)
     private verificationCodeRepository: Repository<VerificationCode>,
   ) {}
@@ -28,6 +30,11 @@ export class AuthService {
   }
 
   async login(user: any) {
+    // Verificar que el usuario haya confirmado su email
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Debes verificar tu email antes de iniciar sesión. Revisa el código que te enviamos por SMS.');
+    }
+
     const payload = { email: user.email, sub: user.id };
     return {
       access_token: this.jwtService.sign(payload),
@@ -74,7 +81,10 @@ export class AuthService {
 
       await this.verificationCodeRepository.save(verificationCode);
 
-      console.log(`📱 Código de verificación para ${user.email}: ${code}`);
+      // Enviar SMS con código de verificación
+      if (user.phone) {
+        await this.smsService.sendVerificationCode(user.phone, code);
+      }
 
       return {
         message: 'Usuario registrado. Verifica tu código para activar tu cuenta.',
@@ -316,8 +326,8 @@ export class AuthService {
 
     await this.verificationCodeRepository.save(verificationCode);
 
-    // TODO: Enviar SMS con Twilio
-    console.log(`📱 Código de verificación de teléfono para ${phone}: ${code}`);
+    // Enviar SMS con código de verificación
+    await this.smsService.sendVerificationCode(phone, code);
 
     return {
       message: 'Código de verificación enviado al teléfono',

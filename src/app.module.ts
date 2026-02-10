@@ -10,6 +10,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { AddressesModule } from './addresses/addresses.module';
 import { OrdersModule } from './orders/orders.module';
 import { DriversModule } from './drivers/drivers.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { DriversModule } from './drivers/drivers.module';
     AddressesModule,
     OrdersModule,
     DriversModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

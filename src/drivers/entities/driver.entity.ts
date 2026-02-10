@@ -6,6 +6,8 @@ import {
   UpdateDateColumn,
   Index,
   OneToMany,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { Order } from '../../orders/entities/order.entity';
 
@@ -101,6 +103,9 @@ export class Driver {
   @Column({ default: true })
   smsNotificationsEnabled: boolean;
 
+  @Column('text', { nullable: true })
+  fcmToken: string; // Token de Firebase Cloud Messaging para notificaciones push
+
   // INFORMACIÓN DE EMERGENCIA
   @Column({ nullable: true, length: 100 })
   emergencyContactName: string;
@@ -110,6 +115,14 @@ export class Driver {
 
   @Column({ nullable: true, length: 50 })
   emergencyContactRelationship: string;
+
+  // PEDIDO ACTUAL
+  @Column({ name: 'current_order_id', nullable: true })
+  currentOrderId: string;
+
+  @ManyToOne(() => Order, { nullable: true })
+  @JoinColumn({ name: 'current_order_id' })
+  currentOrder: Order;
 
   // Relación con pedidos
   @OneToMany(() => Order, (order) => order.driverId)
